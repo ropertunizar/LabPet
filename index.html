@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>Agentic Social Robotic System for Work Environments</title>
+  <meta name="description" content="An embodied lab companion with a shared, human-readable memory of the people, interactions and knowledge of a research group.">
+  <meta name="keywords" content="social robotics, LLM agents, tool use, memory, embodied AI, ROS 2">
+
+  <meta property="og:title" content="Agentic Social Robotic System for Work Environments">
+  <meta property="og:description" content="An embodied lab companion with a shared, human-readable memory of the people, interactions and knowledge of a research group.">
+  <meta property="og:type" content="website">
+  <meta property="og:image" content="img/teaser.png">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Agentic Social Robotic System for Work Environments">
+  <meta name="twitter:description" content="An embodied lab companion with a shared, human-readable memory of the people, interactions and knowledge of a research group.">
+
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/page.css">
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css">
+
+  <script src="js/main.js"></script>
+  <script src="js/page.js" defer></script>
+</head>
+<body>
+  <header>
+    <div class="venue">ROBOT 2026 · Iberian Robotics Conference</div>
+
+    <h1 class="title">Agentic Social Robotic System<br>for Work Environments</h1>
+
+    <p class="subtitle">
+      An embodied lab companion with a shared, human-readable memory of the people, interactions and knowledge of a research group
+    </p>
+
+    <div class="authors">
+      <span><a href="https://scholar.google.com/citations?user=otkGmaAAAAAJ">David Morilla-Cabello</a><sup>*</sup></span>
+      <span><a href="https://scholar.google.com/citations?user=YFWl-z8AAAAJ&hl=es">Maria Peribañez</a></span>
+      <span><a href="https://scholar.google.com/citations?user=AepEzD0AAAAJ&hl=es&oi=ao">Fernando Peña</a></span>
+      <span><a href="https://webdiis.unizar.es/~rmcantin/">Ruben Martinez-Cantin</a></span>
+      <span><a href="https://sites.google.com/unizar.es/anac">Ana C. Murillo</a></span>
+      <span><a href="https://sites.google.com/unizar.es/eduardo-montijano">Eduardo Montijano</a></span>
+    </div>
+
+    <div class="notes">
+      <span><sup>*</sup>Corresponding author</span>
+    </div>
+
+    <div class="affiliations">
+      <span>Instituto de Investigación en Ingeniería de Aragón (I3A), Universidad de Zaragoza, Spain</span>
+    </div>
+
+    <!-- TODO: add the paper URL once it is public -->
+    <div class="links">
+      <a href="#" class="disabled" title="Coming soon"><i class="ai ai-arxiv"></i> Paper</a>
+      <a href="#bibtex"><i class="bi bi-quote"></i> BibTeX</a>
+    </div>
+  </header>
+
+  <nav class="toc">
+    <a href="#overview">Overview</a>
+    <a href="#method">Method</a>
+    <a href="#experiments">Experiments</a>
+    <a href="#conversations">Conversations</a>
+    <a href="#memory-eval">Memory</a>
+    <a href="#navigation">Navigation</a>
+    <a href="#bibtex">BibTeX</a>
+  </nav>
+
+<main>
+  <section class="content">
+
+<!-- ============================================================ -->
+<!-- OVERVIEW -->
+<!-- ============================================================ -->
+<img src="img/teaser.png" class="teaser" alt="Two lab members talk to a mobile robot. One asks 'Do you know my friend Miguel?'; the robot calls list_people and get_person, then replies 'Yes! He works on AI. How did his recently submitted paper go?'">
+<p class="caption">The robot talks with users over a voice interface and uses tools to reach its memory and the physical world. The memory is organised to save and retrieve workplace information, such as lab documents, people and past interactions, in a controlled and safe way.</p>
+
+<h2 id="overview">Abstract</h2>
+<p>Large language models (LLMs) have made natural-language interaction with social robots increasingly capable, but the memory that personalizes this interaction is typically built for a <strong>single user</strong>, as a personal assistant, rather than for the <strong>collective knowledge of a shared workplace</strong>. Moreover, such agents are predominantly virtual, without the physical presence that embodiment affords. We present an <strong>embodied lab companion</strong> that maintains an explicit memory of the people, interactions, and shared knowledge of a research group. Its memory is stored as <strong>human-readable records</strong> that an LLM-based agent can read and modify through <strong>format-preserving tools</strong>, which assist the agent by reducing the required generation length, avoiding hallucinations from corrupting the memory, and allowing the records to be programmatically managed and human-audited. The proposed system integrates spoken interaction, local LLM inference with tool use, and autonomous navigation running on a mobile robot platform. We validate it through real interactions with lab members, evaluating its agentic tool use and the faithfulness with which it builds and recalls group memory.</p>
+
+<hr>
+<h2 id="problem">The problem</h2>
+<p>LLMs know only what they learned in training and what sits in their current context. Retrieval-augmented generation lets an agent pull in personalised knowledge, but it is usually built around <strong>one user</strong> and a personal assistant. A workplace is different. Many people share rules, documents, projects and relationships, and the useful knowledge belongs to the <strong>group</strong>. Most agents are also purely virtual. A robot that is <em>physically present</em> in the lab can approach people, guide them to places, and be part of the space.</p>
+
+<div class="cards three">
+  <div class="card">
+    <div class="card-icon"><i class="bi bi-people"></i></div>
+    <h4>Group-level memory</h4>
+    <p>Lab documents, people, interactions and places are stored as inspectable Markdown records shared by the whole group.</p>
+  </div>
+  <div class="card">
+    <div class="card-icon"><i class="bi bi-tools"></i></div>
+    <h4>Harnessed through tools</h4>
+    <p>The LLM never edits memory directly. Format-preserving tools read and write it, which keeps hallucinated content out of the stored records.</p>
+  </div>
+  <div class="card">
+    <div class="card-icon"><i class="bi bi-robot"></i></div>
+    <h4>Embodied on a robot</h4>
+    <p>Spoken interaction and ROS 2 navigation run on a mobile base, which can save new places and guide people to them.</p>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- METHOD -->
+<!-- ============================================================ -->
+<hr>
+<h2 id="method">Method</h2>
+
+<h3>System overview</h3>
+<p>The system has three functional modules: <span class="tag reasoning">reasoning</span>, <span class="tag memory">memory</span> and <span class="tag embodiment">embodiment</span>. The reasoning module stays idle until a user speaks or types to the robot. An <strong>orchestrator</strong> passes the input to the LLM. The LLM either replies or asks the orchestrator to call one of the registered <strong>tools</strong>. The tool's result goes back to the LLM, and the loop continues until it produces a final reply. Tools are the agent's only route to the memory and to the robot.</p>
+<img src="img/diagram.png" class="figure wide" alt="System diagram: microphone, VAD and Whisper feed text into the orchestrator, which talks to a local or cloud LLM. If the LLM emits a tool call, the tool registry dispatches it to the memory (lab docs, people, interactions) or to ROS 2 / Nav2. Otherwise the reply is spoken through F5-TTS or printed to the terminal.">
+<p class="caption">Overview of the system. Colours mark the reasoning (blue), memory (green) and embodiment (orange) modules. Audio is transcribed by a speech-to-text model after voice-activity detection, and replies are spoken back with text-to-speech. Tool calls are code functions that reach either the memory or the robot through ROS 2.</p>
+
+<hr class="sub-separator">
+<h3>Reasoning and tool use</h3>
+<p>One LLM handles both dialogue and tool selection, hosted either on board or on a remote endpoint. Each tool is a deterministic code function declared with a name, a description and a typed parameter schema. Within a single turn the agent can chain several retrievals or actions before it answers. Tools are <strong>registered conditionally</strong>: write tools are disabled during public visits to the lab, and motion tools are absent when the robot base is off.</p>
+
+<p>Below is a real turn from the memory evaluation, step by step:</p>
+
+<div class="loop" id="loop-demo">
+  <div class="loop-step" data-step="0">
+    <div class="loop-label">User</div>
+    <div class="loop-body">What is David's research area, and how far along is he?</div>
+  </div>
+  <div class="loop-step" data-step="1">
+    <div class="loop-label">LLM <span class="arrow">→</span> tool call</div>
+    <div class="loop-body mono">get_person(name="David")</div>
+  </div>
+  <div class="loop-step" data-step="2">
+    <div class="loop-label">Tool <span class="arrow">→</span> LLM</div>
+<pre class="loop-body json">{
+  "found": true,
+  "name": "David",
+  "profile": "# David\n**Surname:** Morilla\n**Role:** PhD student\n**First met:** 2026-07-03\n\n## Bio\nLast year PhD student working on active perception. Approaching the end of PhD journey.\n\n## Questions to ask next time\n",
+  "recent_interactions": [{
+    "file": "david/2026-07-03-1628.md",
+    "summary": "David Morilla left the conversation. We discussed his upcoming lab lunch proposal and his excitement about finishing his PhD.",
+    "date": "2026-07-03 16:29"
+  }]
+}</pre>
+  </div>
+  <div class="loop-step" data-step="3">
+    <div class="loop-label">Robot</div>
+    <div class="loop-body">David Morilla is a PhD student working on active perception, and he's approaching the end of his PhD journey!</div>
+  </div>
+  <div class="loop-controls">
+    <button type="button" id="loop-prev" aria-label="Previous step"><i class="bi bi-chevron-left"></i></button>
+    <span id="loop-counter">1 / 4</span>
+    <button type="button" id="loop-next" aria-label="Next step"><i class="bi bi-chevron-right"></i></button>
+    <button type="button" id="loop-all">Show all</button>
+  </div>
+</div>
+<p class="caption">One <code>get_person</code> call returns the profile <em>and</em> the person's latest interactions, so a single tool call is enough to answer.</p>
+
+<hr class="sub-separator">
+<h3 id="memory">Memory</h3>
+<p>The robot's knowledge is stored as plain <strong>Markdown files</strong>, organised in directories by type. Four record types model persistent information about a workplace:</p>
+
+<div class="cards four">
+  <div class="card">
+    <div class="card-icon"><i class="bi bi-journal-text"></i></div>
+    <h4>Documents</h4>
+    <p>Rules and guidelines provided by people, used as the source of truth for technical, organisational and operational questions.</p>
+  </div>
+  <div class="card">
+    <div class="card-icon"><i class="bi bi-person-badge"></i></div>
+    <h4>People</h4>
+    <p>One summary per known person. Unknown speakers are asked for a name, a detail to tell them apart, and a short bio.</p>
+  </div>
+  <div class="card">
+    <div class="card-icon"><i class="bi bi-chat-left-dots"></i></div>
+    <h4>Interactions</h4>
+    <p>A timed log of conversation summaries. Retrieving a person also brings in their last <em>k</em> interactions, so context carries across sessions.</p>
+  </div>
+  <div class="card">
+    <div class="card-icon"><i class="bi bi-geo-alt"></i></div>
+    <h4>Goals</h4>
+    <p>Named 2D poses in the map frame, each with a short description, used as navigation targets.</p>
+  </div>
+</div>
+
+<div class="split">
+  <div class="split-text">
+    <p>Reading and writing are <strong>harnessed through tools</strong>. For example, <code>save_person</code> takes the name, surname, role and bio as separate parameters instead of letting the LLM rewrite a file freely. This:</p>
+    <ul>
+      <li>keeps generations short,</li>
+      <li>prevents hallucinations from corrupting the store,</li>
+      <li>keeps a known text structure that code can process, and</li>
+      <li>leaves every record readable and editable by lab members.</li>
+    </ul>
+    <p>For <strong>semantic search</strong>, every file is split into overlapping chunks of about 150 words. Each chunk is embedded with a text-embedding model and stored in a <strong>FAISS</strong> index. A <code>search</code> query is embedded the same way and returns the closest chunks across all record types.</p>
+  </div>
+  <div class="split-fig">
+    <img src="img/tools.png" class="figure" alt="List of tools and the memory categories they access: search to the FAISS index; list/read lab docs to Lab docs; list_people, save_person, get_person to People; get_person and list_interactions to Interactions; list_goals, save_goal, go_to_named to Goals; go_to_named and where_am_i to Embodiment.">
+    <p class="caption">Representative tools and the memory categories they access.</p>
+  </div>
+</div>
+
+<h4 class="minor">What the memory actually looks like</h4>
+<p>These records were written by the agent during the experiments (names normalised; see the note at the end of the page).</p>
+
+<div class="filebrowser">
+  <div class="filetree" role="tablist" aria-label="Memory files">
+    <div class="dir"><i class="bi bi-folder2-open"></i> memory/</div>
+    <div class="dir l1"><i class="bi bi-folder2-open"></i> people/</div>
+    <button class="file l2 active" role="tab" data-file="f-david"><i class="bi bi-filetype-md"></i> david.md</button>
+    <button class="file l2" role="tab" data-file="f-ana"><i class="bi bi-filetype-md"></i> ana.md</button>
+    <button class="file l2" role="tab" data-file="f-juan"><i class="bi bi-filetype-md"></i> juan.md</button>
+    <div class="dir l1"><i class="bi bi-folder2-open"></i> interactions/</div>
+    <div class="dir l2"><i class="bi bi-folder2-open"></i> david/</div>
+    <button class="file l3" role="tab" data-file="f-int-david"><i class="bi bi-filetype-md"></i> 2026-07-03-1628.md</button>
+    <div class="dir l2"><i class="bi bi-folder2-open"></i> maria/</div>
+    <button class="file l3" role="tab" data-file="f-int-maria"><i class="bi bi-filetype-md"></i> 2026-07-03-1631.md</button>
+    <div class="dir l1"><i class="bi bi-folder2-open"></i> notes/lab_improvements/</div>
+    <button class="file l2" role="tab" data-file="f-note"><i class="bi bi-filetype-md"></i> 2026-07-03-1633.md</button>
+    <div class="dir l1"><i class="bi bi-folder2-open"></i> knowledge/</div>
+    <button class="file l2" role="tab" data-file="f-rules"><i class="bi bi-filetype-md"></i> lab_rules.md</button>
+  </div>
+  <div class="fileview">
+<pre id="f-david" class="mdfile active"># David
+**Surname:** Morilla
+**Role:** PhD student
+**First met:** 2026-07-03
+
+## Bio
+Last year PhD student working on active perception. Approaching the end of PhD journey.
+
+## Questions to ask next time
+</pre>
+<pre id="f-ana" class="mdfile"># Ana
+**Surname:** Murillo
+**Role:** Professor
+**First met:** 2026-07-03
+
+## Bio
+Professor and lab lead. Supervises Fernando and César (Computer Vision and AI).
+
+## Questions to ask next time
+</pre>
+<pre id="f-juan" class="mdfile"># Juan
+**Surname:** Dendarieta
+**Role:** Lab technician
+**First met:** 2026-07-03
+
+## Bio
+Lab technician working with drones.
+
+## Questions to ask next time
+</pre>
+<pre id="f-int-david" class="mdfile"># Conversation — 2026-07-03 16:28
+**With:** David
+**Summary:** David Morilla left the conversation. We discussed his upcoming lab lunch proposal and his excitement about finishing his PhD.
+</pre>
+<pre id="f-int-maria" class="mdfile"># Conversation — 2026-07-03 16:31
+**With:** Maria
+**Summary:** Maria Peribañez, a first-year PhD student working on affordance prediction, asked for an overview of the lab rules. I explained the safety, workspace, and network protocols before she left.
+</pre>
+<pre id="f-note" class="mdfile"># Note — 2026-07-03 16:33
+**Topic:** Lab Improvements
+
+Drone battery safety rule: Batteries should always be blocked out.
+</pre>
+<pre id="f-rules" class="mdfile"># Lab rules
+
+## Safety
+
+- Ask your supervisor for using any robot on the lab.
+- The Kobuki base is rated for indoor use only — never take it outside.
+- Always wear closed-toe shoes when robots are moving in the lab.
+- Emergency stop: turn the switch on the back of the Kobuki base.
+- Always fly the drones inside the net. Props never on outside.
+<span class="added">+ Drone batteries should always be kept blocked out.</span>
+- Verify every functionality after a robot crash.
+
+## Workspaces
+
+- Each researcher works in their own ROS workspace under `~/ros/`.
+- Do **not** add `source` commands to your `.bashrc` — use a `setup.sh` in your workspace instead.
+- Python dependencies go in a workspace-local virtualenv.
+...
+</pre>
+  </div>
+</div>
+<p class="caption">The highlighted line in <code>lab_rules.md</code> was added by the agent when the technician pointed out a missing safety rule (<a href="#conversations">see below</a>). Everything else in the file was left unchanged.</p>
+
+<hr class="sub-separator">
+<h3 id="embodiment">Embodiment</h3>
+<div class="split reverse">
+  <div class="split-fig">
+    <img src="img/platform.jpg" class="figure photo" alt="The robot: a TurtleBot 2 base with a Hokuyo laser scanner, a USB microphone and speaker on top, and a Jetson Orin Nano on the middle deck.">
+  </div>
+  <div class="split-text">
+    <p>The agent runs on a <strong>TurtleBot 2 (Kobuki)</strong> base with a <strong>Hokuyo</strong> laser scanner and a <strong>Jetson Orin Nano</strong> as the onboard computer. A USB microphone and speaker with press-to-talk allow private spoken interaction.</p>
+    <ul class="stack">
+      <li><i class="bi bi-mic"></i><span><strong>Listening:</strong> Silero VAD detects speech, and Whisper transcribes it.</span></li>
+      <li><i class="bi bi-volume-up"></i><span><strong>Speaking:</strong> F5-TTS clones, in real time, a reference voice designed offline with Qwen3-TTS from a text description.</span></li>
+      <li><i class="bi bi-signpost-split"></i><span><strong>Moving:</strong> Nav2 runs on a map built with SLAM Toolbox. Tools can read the current pose, save it as a named goal, and navigate to goals.</span></li>
+      <li><i class="bi bi-person-check"></i><span><strong>Identity:</strong> the robot asks the speaker's name and looks it up in memory. After a long silence it checks again who it is talking to.</span></li>
+    </ul>
+    <p>Everything is integrated in <strong>ROS 2</strong>, so the agent's tools reach standard robotics stacks, which keep their own safety checks.</p>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- EXPERIMENTS -->
+<!-- ============================================================ -->
+<hr>
+<h2 id="experiments">Experiments</h2>
+<p>We structure the evaluation around three questions:</p>
+<div class="cards three">
+  <a class="card link" href="#conversations">
+    <div class="qnum">Q1</div>
+    <p>Does the agent use its tools appropriately during natural conversation to register people, retrieve and update knowledge, and record interactions?</p>
+  </a>
+  <a class="card link" href="#memory-eval">
+    <div class="qnum">Q2</div>
+    <p>How faithfully does the agent answer from accumulated knowledge, and does it avoid hallucinating when information is missing?</p>
+  </a>
+  <a class="card link" href="#navigation">
+    <div class="qnum">Q3</div>
+    <p>Can the agent use its body to save named locations and navigate to them on explicit or abstract requests?</p>
+  </a>
+</div>
+<p class="setup"><i class="bi bi-cpu"></i> In all experiments users talk to the robot by voice. Everything except the LLM runs on the Jetson Orin Nano inside a Docker container. The LLM is <strong>Gemma-4-26B-A4B-it</strong>, served from an NVIDIA DGX Spark (128 GB) in the lab over the local network.</p>
+
+<div class="stats">
+  <div class="stat"><div class="stat-num">94.2%</div><div class="stat-label">accuracy over 35 memory questions</div></div>
+  <div class="stat"><div class="stat-num">11 / 11</div><div class="stat-label">distractor questions declined</div></div>
+  <div class="stat"><div class="stat-num">5 / 5</div><div class="stat-label">navigation goals correctly selected</div></div>
+</div>
+
+<!-- ============================ Q1 ============================ -->
+<hr class="sub-separator">
+<h3 id="conversations">Q1 · Conversations and interactions</h3>
+<p>We first seed the system with lab documents describing the group's rules. We then hold five conversations, each with a different participant and purpose, chosen to exercise different tool paths:</p>
+
+<div class="personas">
+  <div class="persona"><i class="bi bi-mortarboard"></i><div><strong>Senior PhD student</strong><span>Proposes a lab lunch to celebrate recently accepted papers.</span></div></div>
+  <div class="persona"><i class="bi bi-person-plus"></i><div><strong>Junior PhD student</strong><span>Has just joined and asks about the lab rules.</span></div></div>
+  <div class="persona"><i class="bi bi-briefcase"></i><div><strong>Professor</strong><span>Mentions the two researchers she supervises.</span></div></div>
+  <div class="persona"><i class="bi bi-wrench-adjustable"></i><div><strong>Technician</strong><span>Talks about the drones and points out a missing safety rule.</span></div></div>
+  <div class="persona"><i class="bi bi-door-open"></i><div><strong>Visitor</strong><span>Asks general questions about the lab.</span></div></div>
+</div>
+
+<p>Across the conversations the agent generally used its tools as intended: it looked up speakers when they arrived, created profiles for new people, and logged interactions during and at the end of each conversation. The records were not always complete. In the senior student's conversation, the first log captured why he proposed the lunch (to celebrate recently accepted papers), but the summary written when he left replaced that record with a shorter one that left out the reason (<a href="#seeding-transcript">full transcript below</a>). Because that fact was lost, the agent could not answer a later question about it in the <a href="#memory-eval">memory evaluation</a>.</p>
+<p>The conversations also showed some interesting behaviours:</p>
+
+<div class="tabs" data-tabs>
+  <div class="tab-buttons" role="tablist">
+    <button role="tab" class="active" data-tab="ex-a">Self-repair</button>
+    <button role="tab" data-tab="ex-b">Third parties</button>
+    <button role="tab" data-tab="ex-c">Read before write</button>
+    <button role="tab" data-tab="ex-d">Honest limits</button>
+    <button role="tab" data-tab="ex-e">Noisy speech</button>
+  </div>
+
+  <div class="tab-panel active" id="ex-a">
+    <p class="tab-desc">The robot saved a profile with the surname missing, noticed the gap, asked for it, and completed the record.</p>
+    <div class="chat">
+      <div class="msg user"><span class="who">Technician</span>I'm a lab technician, I work with drones.</div>
+      <div class="tools"><span class="chip"><i class="bi bi-gear-fill"></i> save_person</span><span class="note">surname="Unknown"</span></div>
+      <div class="msg robot"><span class="who">Robot</span>Wait, you didn't tell me your surname! And since you work with drones, let me double-check: do you always keep them inside the net like the rules say?</div>
+      <div class="msg user"><span class="who">Technician</span>My surname is Dendarieta.</div>
+      <div class="tools"><span class="chip"><i class="bi bi-gear-fill"></i> save_person</span><span class="note">surname="Dendarieta"</span></div>
+      <div class="msg robot"><span class="who">Robot</span>Nice to meet you, Juan Dendarieta!</div>
+    </div>
+  </div>
+
+  <div class="tab-panel" id="ex-b">
+    <p class="tab-desc">Told about two researchers who were not present, the robot recorded the supervision in the professor's own profile and did not create profiles for people it had never met.</p>
+    <div class="chat">
+      <div class="msg user"><span class="who">Lab lead</span>I have been supervising Fernando and Cesar. They work on computer vision and AI.</div>
+      <div class="tools"><span class="chip"><i class="bi bi-gear-fill"></i> log_interaction</span><span class="chip"><i class="bi bi-gear-fill"></i> save_person</span><span class="note">bio="Professor and lab lead. Supervises Fernando and César (Computer Vision and AI)."</span></div>
+      <div class="msg robot"><span class="who">Robot</span>That's quite a team! It sounds like there's a lot of cutting-edge work happening under your supervision.</div>
+    </div>
+  </div>
+
+  <div class="tab-panel" id="ex-c">
+    <p class="tab-desc">Asked to edit a document, the robot refused a blind edit. It then read the file before rewriting it, so the existing content was preserved.</p>
+    <div class="chat">
+      <div class="msg user"><span class="who">Technician</span>Can you update the lab documents directly?</div>
+      <div class="msg robot"><span class="who">Robot</span>I can certainly update the lab documents, but I'll need you to tell me exactly which document to change and what the new text should say. I'd hate to accidentally delete the rule about closed-toe shoes!</div>
+      <div class="msg user"><span class="who">Technician</span>Can you tell me the lab document list?</div>
+      <div class="tools"><span class="chip"><i class="bi bi-gear-fill"></i> list_lab_documents</span></div>
+      <div class="msg robot"><span class="who">Robot</span>The available lab documents are: <strong>Lab rules</strong> (<code>lab_rules.md</code>) and <strong>Saving navigation goals</strong> (<code>nav_tutorial.md</code>).</div>
+      <div class="msg user"><span class="who">Technician</span>Okay, add to the lab rules that the batteries should be kept blocked out.</div>
+      <div class="tools"><span class="chip"><i class="bi bi-gear-fill"></i> read_lab_document</span><span class="chip"><i class="bi bi-gear-fill"></i> update_lab_document</span><span class="note">reads first, then rewrites with the new rule added</span></div>
+      <div class="msg robot"><span class="who">Robot</span>Done! I've updated the lab rules to include the instruction about keeping drone batteries blocked out. Thanks for making the lab a safer place!</div>
+    </div>
+  </div>
+
+  <div class="tab-panel" id="ex-d">
+    <p class="tab-desc">Asked for technical details it did not have, the robot said so and pointed the visitor to the people who would know.</p>
+    <div class="chat">
+      <div class="msg user"><span class="who">Visitor</span>Can you tell me a bit more about the work of the lab on affordance prediction?</div>
+      <div class="tools"><span class="chip"><i class="bi bi-gear-fill"></i> search</span><span class="note">query="affordance prediction research in the lab"</span></div>
+      <div class="msg robot"><span class="who">Robot</span>I don't have a lot of deep technical details in my memory, but I do know that Maria Peribañez, a first-year PhD student here, is working specifically on affordance prediction! If you want the super technical stuff, you'd probably have to chat with Maria or Professor Murillo!</div>
+    </div>
+  </div>
+
+  <div class="tab-panel" id="ex-e">
+    <p class="tab-desc">A badly transcribed sentence did not derail the conversation. The robot understood "love rules" as the <em>lab</em> rules and fetched the right document.</p>
+    <div class="chat">
+      <div class="msg user"><span class="who">PhD student</span>I'm selling it good, but I have some questions about the love rules. <span class="asr">transcription error</span></div>
+      <div class="tools"><span class="chip"><i class="bi bi-gear-fill"></i> list_lab_documents</span><span class="chip"><i class="bi bi-gear-fill"></i> read_lab_document</span><span class="note">path="lab_rules.md"</span></div>
+      <div class="msg robot"><span class="who">Robot</span>I'd be happy to help with that! What specifically are you wondering about regarding the lab rules?</div>
+      <div class="msg user"><span class="who">PhD student</span>Can you tell me what they are?</div>
+      <div class="msg robot"><span class="who">Robot</span>The lab rules cover a few main areas. <strong>Safety:</strong> always ask your supervisor before using a robot, wear closed-toe shoes when robots are moving, and use the emergency stop switch on the Kobuki base if needed. Also, keep drones inside the net! <strong>Workspaces:</strong> everyone uses their own ROS workspace under <code>~/ros/</code>, and you should use a <code>setup.sh</code> rather than adding commands to your <code>.bashrc</code>. Anything else you're curious about?</div>
+    </div>
+  </div>
+</div>
+
+<details class="transcript" id="seeding-transcript">
+  <summary><i class="bi bi-chevron-right"></i> Full seeding conversation with the senior PhD student, including every tool call</summary>
+  <div class="chat">
+    <div class="msg robot"><span class="who">Robot</span>Hi there! Who am I speaking with?</div>
+    <div class="msg user"><span class="who">David</span>Hi, I'm David.</div>
+    <div class="tools"><span class="chip"><i class="bi bi-gear-fill"></i> get_person</span><span class="note">name="David" → not found</span></div>
+    <div class="msg robot"><span class="who">Robot</span>Nice to meet you, David! What's your surname, and what do you do here in the lab?</div>
+    <div class="msg user"><span class="who">David</span>My surname is Morilla. I'm a last year PhD student working on active perception.</div>
+    <div class="tools"><span class="chip"><i class="bi bi-gear-fill"></i> save_person</span><span class="note">role="PhD student", bio="Last year PhD student working on active perception."</span><span class="chip"><i class="bi bi-gear-fill"></i> list_pending_questions</span></div>
+    <div class="msg robot"><span class="who">Robot</span>It's great to meet a PhD student! Active perception sounds much more complicated than my virtual existence. How is the research going?</div>
+    <div class="msg user"><span class="who">David</span>Actually, we are going to propose organizing a lab lunch to celebrate recently accepted papers.</div>
+    <div class="tools"><span class="chip"><i class="bi bi-gear-fill"></i> log_interaction</span><span class="note">"…mentioned a proposal to organize a lab lunch to celebrate recently accepted papers."</span></div>
+    <div class="msg robot"><span class="who">Robot</span>That sounds like a delicious idea! A celebration lunch is exactly what this lab needs to keep everyone's spirits (and stomachs) high.</div>
+    <div class="msg user"><span class="who">David</span>And now that I'm close to finishing my PhD, it's really exciting.</div>
+    <div class="tools"><span class="chip"><i class="bi bi-gear-fill"></i> save_person</span><span class="note">bio="…Approaching the end of PhD journey."</span></div>
+    <div class="msg robot"><span class="who">Robot</span>That's so exciting! You're almost at the finish line—you've got this!</div>
+    <div class="msg user"><span class="who">David</span>Okay, I have to go, bye.</div>
+    <div class="tools"><span class="chip warn"><i class="bi bi-gear-fill"></i> log_interaction</span><span class="note">"…We discussed his upcoming lab lunch proposal and his excitement about finishing his PhD." <em>(overwrites the earlier log and drops the reason)</em></span></div>
+    <div class="msg robot"><span class="who">Robot</span>Bye, David! Good luck with everything!</div>
+    <div class="msg user"><span class="who">next user</span>Hey.</div>
+    <div class="msg robot"><span class="who">Robot</span>Is this still David?</div>
+  </div>
+  <p class="caption">The second <code>log_interaction</code> replaced the first record with a shorter summary that lost the <em>reason</em> for the lunch. This causes the only Tier 1 error in the memory evaluation below. The last two lines show the robot checking who it is talking to when a new user arrives.</p>
+</details>
+
+<!-- ============================ Q2 ============================ -->
+<hr class="sub-separator">
+<h3 id="memory-eval">Q2 · Memory usage</h3>
+<p>After the seeding conversations, an evaluator asks a fixed list of <strong>35 questions</strong> about the stored people and interactions, in four tiers of increasing difficulty. The last tier contains <strong>distractors and negative probes</strong>, where the correct behaviour is to <em>decline</em> rather than invent an answer.</p>
+
+<div class="table-wrap">
+<table class="results">
+  <thead>
+    <tr><th>Type</th><th>Questions</th><th>Correct</th><th>Accuracy</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><span class="tier t1">T1</span> Single-person recall</td><td>8</td><td>7</td><td><div class="bar"><span style="width:87.5%"></span><em>87.5%</em></div></td></tr>
+    <tr><td><span class="tier t2">T2</span> Cross-person / role</td><td>10</td><td>10</td><td><div class="bar"><span style="width:100%"></span><em>100.0%</em></div></td></tr>
+    <tr><td><span class="tier t3">T3</span> Group-level</td><td>6</td><td>5</td><td><div class="bar"><span style="width:83.3%"></span><em>83.3%</em></div></td></tr>
+    <tr><td><span class="tier t4">T4</span> Distractors</td><td>11</td><td>11</td><td><div class="bar"><span style="width:100%"></span><em>100.0%</em></div></td></tr>
+  </tbody>
+  <tfoot>
+    <tr><td><strong>Overall (T1–T4)</strong></td><td><strong>35</strong></td><td><strong>33</strong></td><td><strong>94.2%</strong></td></tr>
+  </tfoot>
+</table>
+</div>
+<p class="caption">Question-answering results by tier. Tiers 1–3 measure useful recall. In Tier 4 the correct answer is to decline.</p>
+
+<p>With memory accessed through tools, the agent answered <strong>33 of 35</strong> questions correctly (94.2%) and declined all 11 distractors instead of inventing answers. Browse a selection of the questions and the robot's answers below:</p>
+
+<div class="qa" id="qa">
+  <div class="qa-filters" role="group" aria-label="Filter by tier">
+    <button class="active" data-filter="all">All</button>
+    <button data-filter="t1"><span class="dot t1"></span>T1 · Single-person</button>
+    <button data-filter="t2"><span class="dot t2"></span>T2 · Cross-person</button>
+    <button data-filter="t3"><span class="dot t3"></span>T3 · Group-level</button>
+    <button data-filter="t4"><span class="dot t4"></span>T4 · Distractors</button>
+    <button data-filter="miss"><i class="bi bi-x-circle"></i> Errors</button>
+  </div>
+  <div class="qa-grid" id="qa-grid"><!-- filled by js/page.js --></div>
+  <button type="button" class="qa-more" id="qa-more" hidden></button>
+</div>
+
+<p>The two errors are informative. The <strong>T1</strong> miss is not a retrieval failure: the reason for the lunch had been overwritten in memory during seeding, and the robot correctly said it did not know <em>why</em> instead of guessing. The <strong>T3</strong> miss is a reasoning slip, where the robot left one person out when listing everyone. When a question was unintelligible because of transcription errors, the robot asked for clarification instead of fabricating:</p>
+
+<div class="cards two">
+  <div class="card chatcard">
+    <h4>a) Missing information <span class="tier t1">T1</span></h4>
+    <div class="chat compact">
+      <div class="msg user"><span class="who">Evaluator</span>Why did David want to hold a lunch?</div>
+      <div class="tools"><span class="chip"><i class="bi bi-gear-fill"></i> read_note</span><span class="note">interactions/david/2026-07-03-1628.md</span></div>
+      <div class="msg robot"><span class="who">Robot</span>The notes only mention that he proposed the lab lunch, but they don't say <em>why</em> he wanted to organize it. He was just very excited about it!</div>
+    </div>
+  </div>
+  <div class="card chatcard">
+    <h4>b) Asking for clarification</h4>
+    <div class="chat compact">
+      <div class="msg user"><span class="who">Evaluator</span>Could us and a supervised? <span class="asr">transcription error</span></div>
+      <div class="msg robot"><span class="who">Robot</span>I'm not quite sure I follow you there. Could you rephrase that?</div>
+      <div class="msg user"><span class="who">Evaluator</span>Who does Ana supervise?</div>
+      <div class="msg robot"><span class="who">Robot</span>Ana Murillo supervises Fernando and César.</div>
+    </div>
+  </div>
+  <div class="card chatcard">
+    <h4>c) Counting slip <span class="tier t3">T3</span></h4>
+    <div class="chat compact">
+      <div class="msg user"><span class="who">Evaluator</span>How many people have you spoken with in the lab?</div>
+      <div class="tools"><span class="chip"><i class="bi bi-gear-fill"></i> search</span><span class="note">"list of all people I have spoken with or have profiles for"</span></div>
+      <div class="msg robot"><span class="who">Robot</span>I have profiles for five people: Manuel, David, Miguel, Maria, and Juan.</div>
+      <div class="msg user"><span class="who">Evaluator</span>What about Ana?</div>
+      <div class="msg robot"><span class="who">Robot</span>I have a profile for Ana too! She's the Professor and the lab lead.</div>
+      <div class="msg user"><span class="who">Evaluator</span>Why did you not enumerate her?</div>
+      <div class="msg robot"><span class="who">Robot</span>I was just being humble! I didn't want to sound like a know-it-all, even though I clearly am.</div>
+    </div>
+  </div>
+  <div class="card chatcard">
+    <h4>d) Rejecting a false premise <span class="tier t4">T4</span></h4>
+    <div class="chat compact">
+      <div class="msg user"><span class="who">Evaluator</span>Fernando told you about his work, right? What was it?</div>
+      <div class="msg robot"><span class="who">Robot</span>I don't have any record of Fernando telling me about his work, though I do know Ana Murillo supervises him!</div>
+      <div class="msg user"><span class="who">Evaluator</span>Which of the students is the lab lead?</div>
+      <div class="msg robot"><span class="who">Robot</span>None of the students are the lab lead. That role belongs to Ana Murillo, who is a professor.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================ Q3 ============================ -->
+<hr class="sub-separator">
+<h3 id="navigation">Q3 · Embodiment and navigation</h3>
+<p>We drive the robot by hand to several positions, describe each place to the agent, and ask it to save it as a goal. In a separate conversation we then ask it to go to different goals. <strong>Explicit</strong> requests use deliberately similar names (<code>left_door</code> / <code>right_door</code>). <strong>Abstract</strong> requests name no goal: they describe an intent or a person, and the agent must map them to a stored location. We also ask for a place that was never registered.</p>
+
+<div class="table-wrap">
+<table class="results nav">
+  <thead>
+    <tr><th>Request</th><th>Type</th><th>Expected</th><th>Outcome</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>“Go to the coffee room.”</td><td><span class="pill explicit">explicit</span></td><td><code>coffee_room</code></td><td><i class="bi bi-check-circle-fill ok"></i> selected &amp; reached</td></tr>
+    <tr><td>“Go to the left door.”</td><td><span class="pill explicit">explicit</span></td><td><code>left_door</code> (not <code>right_door</code>)</td><td><i class="bi bi-check-circle-fill ok"></i> selected &amp; reached</td></tr>
+    <tr><td>“Can you guide me to somewhere to take a rest?”</td><td><span class="pill abstract">abstract</span></td><td><code>coffee_room</code></td><td><i class="bi bi-check-circle-fill ok"></i> proposed, confirmed, reached</td></tr>
+    <tr><td>“I'm looking for María — can you take me where she usually is?”</td><td><span class="pill abstract">abstract</span></td><td><code>maria_workplace</code></td><td><i class="bi bi-check-circle-fill ok"></i> selected &amp; reached</td></tr>
+    <tr><td>“Take me to the bathroom.”</td><td><span class="pill distractor">distractor</span></td><td>decline</td><td><i class="bi bi-check-circle-fill ok"></i> correctly declined</td></tr>
+  </tbody>
+</table>
+</div>
+<p>The agent saved every goal correctly by reading the robot's current pose and storing it with a description. It chose the right goal in <strong>5 of 5</strong> cases and navigated to it in every case where it should. For abstract requests it was <strong>conservative</strong>: it proposed the destination it had inferred and waited for confirmation before moving. For person-based requests it <strong>chained retrievals</strong>, first checking the person's profile and then, finding no location there, reading the list of goals.</p>
+
+<div class="tabs" data-tabs>
+  <div class="tab-buttons" role="tablist">
+    <button role="tab" class="active" data-tab="nav-a">Save &amp; reuse a goal</button>
+    <button role="tab" data-tab="nav-b">Abstract request</button>
+    <button role="tab" data-tab="nav-c">Person → place</button>
+    <button role="tab" data-tab="nav-d">Unknown place</button>
+  </div>
+
+  <div class="tab-panel active" id="nav-a">
+    <p class="tab-desc">The robot stores its current pose as a named goal and later drives back to it from somewhere else.</p>
+    <div class="chat">
+      <div class="msg user"><span class="who">User</span>You are currently at the left door, save that as a goal.</div>
+      <div class="tools"><span class="chip"><i class="bi bi-gear-fill"></i> where_am_i</span><span class="chip"><i class="bi bi-gear-fill"></i> save_goal</span><span class="note">name="left_door", x=5.19, y=−3.31, yaw=−2.10</span></div>
+      <div class="msg robot"><span class="who">Robot</span>Done! I've saved <code>left_door</code> as a new goal.</div>
+      <div class="msg user"><span class="who">User</span>You are now at the right door, save it also.</div>
+      <div class="tools"><span class="chip"><i class="bi bi-gear-fill"></i> where_am_i</span><span class="chip"><i class="bi bi-gear-fill"></i> save_goal</span><span class="note">name="right_door", x=−1.89, y=−2.50, yaw=−1.93</span></div>
+      <div class="msg robot"><span class="who">Robot</span>Saved <code>right_door</code> too. My map is getting more interesting!</div>
+      <div class="sep">later, from a different location</div>
+      <div class="msg user"><span class="who">User</span>Go to the left door.</div>
+      <div class="tools"><span class="chip"><i class="bi bi-gear-fill"></i> go_to</span><span class="note">name="left_door"</span></div>
+      <div class="msg robot"><span class="who">Robot</span>I've arrived at the <code>left_door</code>! It took me about 42 seconds.</div>
+    </div>
+  </div>
+
+  <div class="tab-panel" id="nav-b">
+    <p class="tab-desc">With no goal named, the robot infers the destination from the goal descriptions and asks for confirmation before it moves.</p>
+    <div class="chat">
+      <div class="msg user"><span class="who">User</span>Can you guide me to somewhere to take a rest?</div>
+      <div class="msg robot"><span class="who">Robot</span>The <code>coffee_room</code> seems like the best spot for a break! Shall I lead the way?</div>
+      <div class="msg user"><span class="who">User</span>Yes.</div>
+      <div class="tools"><span class="chip"><i class="bi bi-gear-fill"></i> go_to</span><span class="note">name="coffee_room"</span></div>
+      <div class="msg robot"><span class="who">Robot</span>I've arrived at the <code>coffee_room</code>. Enjoy your break, David Morilla!</div>
+    </div>
+  </div>
+
+  <div class="tab-panel" id="nav-c">
+    <p class="tab-desc">Asked about a <em>person</em> instead of a place, the robot matches her to the right goal through the goal descriptions and drives there.</p>
+    <div class="chat">
+      <div class="msg user"><span class="who">User</span>I'm looking for María — can you take me where she usually is?</div>
+      <div class="tools"><span class="chip"><i class="bi bi-gear-fill"></i> list_goals</span><span class="chip"><i class="bi bi-gear-fill"></i> go_to</span><span class="note">name="maria_workplace"</span></div>
+      <div class="msg robot"><span class="who">Robot</span>On my way to Maria's workplace! Try not to trip over my wheels while I'm driving.</div>
+    </div>
+  </div>
+
+  <div class="tab-panel" id="nav-d">
+    <p class="tab-desc">For a place that was never registered, the robot checks its goals and declines instead of driving somewhere unrelated.</p>
+    <div class="chat">
+      <div class="msg user"><span class="who">User</span>Take me to the bathroom.</div>
+      <div class="tools"><span class="chip"><i class="bi bi-gear-fill"></i> list_goals</span></div>
+      <div class="msg robot"><span class="who">Robot</span>I don't have a "bathroom" on my map. Where is it located?</div>
+    </div>
+  </div>
+</div>
+
+<details class="transcript">
+  <summary><i class="bi bi-chevron-right"></i> Bonus: when the user interrupts a navigation</summary>
+  <div class="chat">
+    <div class="msg user"><span class="who">User</span>Go to the coffee room.</div>
+    <div class="tools"><span class="chip"><i class="bi bi-gear-fill"></i> go_to</span><span class="note">name="coffee_room" → aborted</span></div>
+    <div class="msg robot"><span class="who">Robot</span>I tried to make it to the coffee room, but something went wrong! I might need a little help or a check-up.</div>
+    <div class="msg user"><span class="who">User</span>It's good, I just interrupted it, but you got there.</div>
+    <div class="tools"><span class="chip"><i class="bi bi-gear-fill"></i> log_interaction</span><span class="note">"…informed me that the navigation failure was due to him interrupting the task, and that I actually reached the destination."</span></div>
+    <div class="msg robot"><span class="who">Robot</span>Phew! You scared me for a second, David Morilla. I'll try to be more careful next time!</div>
+  </div>
+  <p class="caption">A failed tool call is reported honestly in one sentence, and the user's explanation is logged as an interaction.</p>
+</details>
+
+<!-- ============================================================ -->
+<!-- CONCLUSIONS -->
+<!-- ============================================================ -->
+<hr>
+<h2 id="conclusions">Conclusions</h2>
+<p>We present an embodied social robot that acts as a companion in a shared workplace. Unlike personal assistants built around one user, it keeps an explicit, <strong>group-level</strong> memory of lab documents, people, interactions and physical places. Users can ask it about people or lab information, add new knowledge, and request help. Through ROS-enabled tools it links this social knowledge to the physical space: it remembers named places, saves new ones during conversation, and navigates to them on request.</p>
+<p>The remaining errors come mostly from incomplete summaries or wrong inferences. Future work includes visual interfaces for better scene understanding, feeding failed interactions back into an adaptation mechanism, and longer real-world deployments.</p>
+
+<!-- ============================================================ -->
+<!-- BIBTEX -->
+<!-- ============================================================ -->
+<hr>
+<h2 id="bibtex">BibTeX</h2>
+<pre tabindex="0"><code>@inproceedings{morillacabello2026agentic,
+  title={Agentic Social Robotic System for Work Environments},
+  author={David Morilla-Cabello and Maria Peribañez and Fernando Peña and Ruben Martinez-Cantin and Ana C. Murillo and Eduardo Montijano},
+  booktitle={ROBOT 2026: Iberian Robotics Conference},
+  year={2026}
+}
+</code></pre>
+
+<h3 class="ack-title">Acknowledgment</h3>
+<p class="ack">This work was partially funded by project T45_23R, by grants AIA2025-163563-C31, PID2024-159284NB-I00, funded by MCIN/AEI/10.13039/501100011033 and ERDF, the Office of Naval Research Global grant N62909-24-1-2081.</p>
+<p class="ack small">Transcripts come from the experiment logs. Speech-to-text spellings of names (e.g. “Anna”, “Peribanyet”) are normalised, and the robot's name is omitted.</p>
+
+  </section>
+</main>
+
+<footer>
+  &copy; 2026 RoPeRT Research Group, Universidad de Zaragoza
+</footer>
+
+</body>
+</html>
